@@ -26,5 +26,20 @@ services:
     depends_on:
       - postgres
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: new_lms_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DBё:-new_lms}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    depends_on:
+      - postgres
+
 volumes:
   new_lms_postgres_data:
