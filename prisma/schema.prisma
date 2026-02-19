@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         UserRole @default(STUDENT)
+  isActive     Boolean  @default(true) // For blocking
+
+  // Relations
+  groups      Group[]       @relation("GroupTeacher") // Groups lead by teacher
+  memberships GroupMember[] // Groups student belongs to
+
+  // Audit/Tracking
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Group {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  teacherId String
+  teacher   User   @relation("GroupTeacher", fields: [teacherId], references: [id])
+
+  students GroupMember[]
+  courses  Course[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id])
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, groupId])
+}
+
+model Course {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id])
+
+  modules Module[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Module {
+  id       String @id @default(cuid())
+  title    String
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  materials Material[]
+  order     Int        @default(0)
+}
+
+model Material {
+  id       String  @id @default(cuid())
+  title    String
+  type     String // 'TEXT', 'VIDEO', 'FILE', 'ASSIGNMENT'
+  content  String? // Text content or URL
+  moduleId String
+  module   Module  @relation(fields: [moduleId], references: [id])
+}
+
+// System wide settings for permission toggles
+model SystemSetting {
+  key         String  @id
+  value       String // JSON value or boolean string
+  description String?
+}
