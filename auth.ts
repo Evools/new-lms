@@ -28,9 +28,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (parsedCredentials.success) {
           const { email, password } = parsedCredentials.data;
           const user = await prisma.user.findUnique({ where: { email } });
-          if (!user) return null;
+          if (!user) {
+            return null;
+          }
 
           const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
+
           if (passwordsMatch) return user;
         }
         return null;
